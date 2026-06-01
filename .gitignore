@@ -1,0 +1,24 @@
+# ── Maven build output ────────────────────────────────────────────────────────
+target/
+
+# ── Runtime artifacts (screenshots, reports, logs) ────────────────────────────
+# These are generated at runtime and must never be committed.
+# Paths match config.properties defaults; update here if you change those keys.
+target/screenshots/
+target/reports/
+target/logs/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.classpath
+*.project
+.settings/
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── WebDriverManager cache ────────────────────────────────────────────────────
+.wdm/

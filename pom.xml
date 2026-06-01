@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.framework</groupId>
+    <artifactId>selenium-framework-core</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>Selenium Framework Core</name>
+    <description>Reusable, application-agnostic Selenium automation framework</description>
+
+    <!-- ================================================================
+         All versions and execution defaults centralised here.
+         Every value is overridable via CLI (-D), CI/CD pipeline,
+         or Maven profile — nothing is hardcoded in plugin config.
+    ================================================================ -->
+    <properties>
+        <!-- Build -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Dependency versions -->
+        <selenium.version>4.18.1</selenium.version>
+        <testng.version>7.9.0</testng.version>
+        <log4j.version>2.22.1</log4j.version>
+        <opencsv.version>5.9</opencsv.version>
+        <webdrivermanager.version>5.7.0</webdrivermanager.version>
+        <extentreports.version>5.1.1</extentreports.version>
+        <commons.lang3.version>3.14.0</commons.lang3.version>
+
+        <!-- Runtime execution defaults — overridable by profile or CLI -->
+        <environment>qa</environment>
+        <browser>chrome</browser>
+        <execution.mode>local</execution.mode>
+        <thread.count>1</thread.count>
+        <testng.suite.file>src/test/resources/testng.xml</testng.suite.file>
+    </properties>
+
+    <dependencies>
+
+        <!-- ============================================================
+             Selenium WebDriver
+             Includes: WebDriver API, all browser drivers, RemoteWebDriver.
+             RemoteWebDriver is required for Selenium Grid and BlazeMeter.
+        ============================================================ -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             TestNG
+             Provides: @Test, @DataProvider, parallel execution engine,
+             IRetryAnalyzer, IAnnotationTransformer, ITestListener.
+        ============================================================ -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             Log4j2 — API and Implementation kept separate.
+             API: allows the logging facade to be used without binding
+             to the implementation at compile time.
+             Core: provides RollingFileAppender, PatternLayout, and
+             log4j2.xml configuration support at runtime.
+        ============================================================ -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             Log4j2 SLF4J Binding
+             Routes all SLF4J calls (from TestNG, WebDriverManager, etc.)
+             through Log4j2. Eliminates "No SLF4J providers found" warnings
+             and unifies all logging under a single system and config.
+        ============================================================ -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             OpenCSV
+             Provides: CSVReaderHeaderAware — reads rows as
+             Map<String, String> keyed by column header.
+             Used exclusively by CsvReader.
+        ============================================================ -->
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>${opencsv.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             WebDriverManager
+             Auto-resolves and caches browser driver binaries at runtime.
+             Eliminates manual chromedriver/geckodriver management.
+             DriverFactory decides whether to invoke it based on
+             execution.mode — it is never called for remote or BlazeMeter.
+        ============================================================ -->
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>${webdrivermanager.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             ExtentReports
+             Provides: thread-safe HTML reports via ThreadLocal<ExtentTest>,
+             screenshot attachment, system metadata, and timestamped output.
+        ============================================================ -->
+        <dependency>
+            <groupId>com.aventstack</groupId>
+            <artifactId>extentreports</artifactId>
+            <version>${extentreports.version}</version>
+        </dependency>
+
+        <!-- ============================================================
+             Apache Commons Lang3
+             Used by ScreenshotUtils for StringUtils filename sanitization.
+             Declared explicitly — never rely on transitive availability.
+        ============================================================ -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.lang3.version}</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <!-- ========================================================
+                 Compiler Plugin
+                 Enforces Java 17 source and target.
+            ======================================================== -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- ========================================================
+                 Surefire Plugin
+                 Executes TestNG suite. Passes environment, browser,
+                 execution.mode, and thread.count as system properties
+                 so ConfigReader and DriverFactory can read them at runtime.
+                 testng.suite.file is a property — consumer projects
+                 can supply their own suite XML without modifying this pom.
+            ======================================================== -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.3</version>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>${testng.suite.file}</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <systemPropertyVariables>
+                        <environment>${environment}</environment>
+                        <browser>${browser}</browser>
+                        <execution.mode>${execution.mode}</execution.mode>
+                        <thread.count>${thread.count}</thread.count>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!-- ========================================================
+                 Resources Plugin
+                 Ensures config/, testdata/, log4j2.xml, and testng.xml
+                 are placed on the classpath during test execution.
+                 Required for classpath-based loading on BlazeMeter.
+            ======================================================== -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+
+        </plugins>
+
+        <!-- Explicit testResource declaration ensures only src/test/resources
+             reaches the classpath — target/ output dirs are never included. -->
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </testResource>
+        </testResources>
+
+    </build>
+
+    <!-- ================================================================
+         Maven Profiles
+         Each profile sets only the environment property.
+         Browser, thread count, and suite file are passed independently
+         via -D flags so profiles remain minimal and composable.
+         qa is activeByDefault — mvn test with no flags targets QA.
+    ================================================================ -->
+    <profiles>
+
+        <profile>
+            <id>qa</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <environment>qa</environment>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>uat</id>
+            <properties>
+                <environment>uat</environment>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>staging</id>
+            <properties>
+                <environment>staging</environment>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>prod</id>
+            <properties>
+                <environment>prod</environment>
+            </properties>
+        </profile>
+
+    </profiles>
+
+</project>
