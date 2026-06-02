@@ -9,10 +9,11 @@ public final class CredentialManager {
 
     private CredentialManager() {}
 
-    // Returns the value of the environment variable identified by key.
-    // Throws ConfigurationException if the variable is absent or blank —
-    // a missing credential is a configuration error, not a recoverable condition.
     public static String get(String key) {
+        if (key == null || key.isBlank()) {
+            throw new ConfigurationException(
+                    "Credential key must not be null or blank.");
+        }
         String value = System.getenv(key);
         if (value == null || value.isBlank()) {
             throw new ConfigurationException(
@@ -21,18 +22,20 @@ public final class CredentialManager {
                     "For BlazeMeter, configure it as a secure variable in the test plan.");
         }
         logger.debug("Credential resolved: {}", key);
-        return value;
+        return value.trim();
     }
 
-    // Returns the value of the environment variable, or null if absent or blank.
-    // Use only for credentials that are genuinely optional in some environments.
     public static String getOptional(String key) {
+        if (key == null || key.isBlank()) {
+            throw new ConfigurationException(
+                    "Credential key must not be null or blank.");
+        }
         String value = System.getenv(key);
         if (value == null || value.isBlank()) {
             logger.debug("Optional credential not set: {}", key);
             return null;
         }
         logger.debug("Optional credential resolved: {}", key);
-        return value;
+        return value.trim();
     }
 }

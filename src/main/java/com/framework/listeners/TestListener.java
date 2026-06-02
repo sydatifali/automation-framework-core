@@ -39,6 +39,7 @@ public class TestListener implements ITestListener, ISuiteListener, IAnnotationT
 
     // ── IAnnotationTransformer ────────────────────────────────────────────────
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void transform(ITestAnnotation annotation, Class testClass,
                           Constructor testConstructor, Method testMethod) {
@@ -51,7 +52,7 @@ public class TestListener implements ITestListener, ISuiteListener, IAnnotationT
 
     @Override
     public void onTestStart(ITestResult result) {
-        int attempt = RetryUtils.currentAttempt.get();
+        int attempt = RetryUtils.getCurrentAttempt();
         String testName = attempt > 0
                 ? result.getName() + " [Retry " + attempt + "]"
                 : result.getName();
@@ -68,6 +69,8 @@ public class TestListener implements ITestListener, ISuiteListener, IAnnotationT
 
     @Override
     public void onTestFailure(ITestResult result) {
+        ensureTestNodeExists(result);
+
         if (DriverFactory.hasDriver()) {
             String screenshotPath = ScreenshotUtils.captureScreenshot(
                     DriverFactory.getDriver(), result.getName());
@@ -78,11 +81,13 @@ public class TestListener implements ITestListener, ISuiteListener, IAnnotationT
         }
 
         Throwable cause = result.getThrowable();
-        String failureMessage = cause != null ? cause.getMessage() : "Unknown failure";
-        ExtentReportManager.getTest().fail(cause != null ? cause : new RuntimeException(failureMessage));
-        logger.error("Test failed: {} | reason: {}", result.getName(), failureMessage);
+        if (cause != null) {
+            ExtentReportManager.getTest().fail(cause);
+        } else {
+            ExtentReportManager.getTest().fail("Test failed: cause not available");
+        }
+        logger.error("Test failed: {}", result.getName(), cause);
 
-        // Cleanup only after the final attempt — not between retries.
         if (!result.wasRetried()) {
             cleanup();
         }
@@ -90,12 +95,23 @@ public class TestListener implements ITestListener, ISuiteListener, IAnnotationT
 
     @Override
     public void onTestSkipped(ITestResult result) {
+        ensureTestNodeExists(result);
         ExtentReportManager.getTest().skip("Test skipped");
         logger.warn("Test skipped: {}", result.getName());
         cleanup();
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
+
+    // Guards against @BeforeSuite / @BeforeTest / @BeforeClass failures where
+    // TestNG calls onTestSkipped() or onTestFailure() without a prior onTestStart().
+    private void ensureTestNodeExists(ITestResult result) {
+        if (ExtentReportManager.getTest() == null) {
+            logger.warn("No report node found for '{}' — creating fallback node",
+                    result.getName());
+            ExtentReportManager.createTest(result.getName());
+        }
+    }
 
     private void cleanup() {
         RetryUtils.resetAttempt();

@@ -1,5 +1,7 @@
 package com.framework.utils;
 
+import com.framework.exception.ConfigurationException;
+import com.framework.exception.TestDataException;
 import org.apache.logging.log4j.Logger;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestResult;
@@ -13,9 +15,7 @@ public class RetryUtils implements IRetryAnalyzer {
     private static final int MAX_RETRY_COUNT =
             ConfigReader.getInstance().getInt("retry.max.count", 2);
 
-    // Tracks the current attempt number for the running thread so TestListener
-    // can label report entries as [Retry N] without coupling to the instance.
-    public static final ThreadLocal<Integer> currentAttempt = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<Integer> currentAttempt = ThreadLocal.withInitial(() -> 0);
 
     private int attemptCount = 0;
 
@@ -26,27 +26,46 @@ public class RetryUtils implements IRetryAnalyzer {
         }
 
         Throwable cause = result.getThrowable();
+
         if (cause instanceof AssertionError) {
-            logger.warn("Test '{}' failed with AssertionError — not retrying (genuine defect)",
-                    result.getName());
+            logger.warn("Test '{}' failed with AssertionError — not retrying (genuine defect): {}",
+                    result.getName(), cause.getMessage());
+            return false;
+        }
+
+        if (cause instanceof ConfigurationException) {
+            logger.error("Test '{}' failed with ConfigurationException — not retrying (unfixable): {}",
+                    result.getName(), cause.getMessage());
+            return false;
+        }
+
+        if (cause instanceof TestDataException) {
+            logger.error("Test '{}' failed with TestDataException — not retrying (unfixable): {}",
+                    result.getName(), cause.getMessage());
             return false;
         }
 
         if (attemptCount < MAX_RETRY_COUNT) {
             attemptCount++;
             currentAttempt.set(attemptCount);
-            logger.warn("Retrying test '{}' — attempt {} of {} | cause: {}",
-                    result.getName(), attemptCount, MAX_RETRY_COUNT,
-                    cause != null ? cause.getClass().getSimpleName() : "unknown");
+            logger.warn("Retrying test '{}' — attempt {} of {} | cause: {} — {}",
+                    result.getName(),
+                    attemptCount,
+                    MAX_RETRY_COUNT,
+                    cause != null ? cause.getClass().getSimpleName() : "unknown",
+                    cause != null ? cause.getMessage() : "");
             return true;
         }
 
-        logger.error("Test '{}' exhausted all {} retry attempts", result.getName(), MAX_RETRY_COUNT);
+        logger.error("Test '{}' exhausted all {} retry attempt(s) — marking as failed",
+                result.getName(), MAX_RETRY_COUNT);
         return false;
     }
 
-    // Called by TestListener after each test method completes (pass or final fail)
-    // to reset the thread-local so the next test starts at attempt 0.
+    public static int getCurrentAttempt() {
+        return currentAttempt.get();
+    }
+
     public static void resetAttempt() {
         currentAttempt.set(0);
     }

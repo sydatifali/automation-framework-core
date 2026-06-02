@@ -11,9 +11,9 @@
 -->
 <suite name="Selenium Framework Core" parallel="methods" thread-count="3" verbose="1">
 
-    <test name="Framework Tests">
+    <test name="Framework Validation">
         <packages>
-            <package name="com.framework"/>
+            <package name="com.framework.validation"/>
         </packages>
     </test>
 

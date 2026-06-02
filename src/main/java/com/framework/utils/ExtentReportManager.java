@@ -13,18 +13,22 @@ public final class ExtentReportManager {
     private static final String REPORT_PATH_KEY     = "report.output.path";
     private static final String DEFAULT_REPORT_PATH = "target/reports/extent-report.html";
 
-    private static ExtentReports extentReports;
+    private static volatile ExtentReports extentReports;
     private static final ThreadLocal<ExtentTest> extentTest = new ThreadLocal<>();
 
     private ExtentReportManager() {}
 
-    // Called once per suite from TestListener.onStart().
     public static synchronized void initReport() {
+        if (extentReports != null) {
+            logger.warn("ExtentReportManager.initReport() called more than once — ignoring duplicate call");
+            return;
+        }
+
         String reportPath = ConfigReader.getInstance().get(REPORT_PATH_KEY, DEFAULT_REPORT_PATH);
-        String reportDir  = reportPath.substring(0, Math.max(reportPath.lastIndexOf('/'),
-                                                              reportPath.lastIndexOf('\\')) + 1);
-        if (!reportDir.isBlank()) {
-            FileUtils.ensureDirectoryExists(reportDir);
+
+        int lastSeparator = Math.max(reportPath.lastIndexOf('/'), reportPath.lastIndexOf('\\'));
+        if (lastSeparator > 0) {
+            FileUtils.ensureDirectoryExists(reportPath.substring(0, lastSeparator));
         }
 
         ExtentSparkReporter spark = new ExtentSparkReporter(reportPath);
@@ -45,7 +49,6 @@ public final class ExtentReportManager {
         logger.info("Extent report initialised: {}", reportPath);
     }
 
-    // Called once per suite from TestListener.onFinish().
     public static synchronized void flushReport() {
         if (extentReports != null) {
             extentReports.flush();
@@ -53,26 +56,23 @@ public final class ExtentReportManager {
         }
     }
 
-    // Called at the start of each test method from TestListener.
     public static void createTest(String testName) {
-        ExtentTest test = extentReports.createTest(testName);
-        extentTest.set(test);
+        if (extentReports == null) {
+            throw new IllegalStateException(
+                    "ExtentReportManager has not been initialised. " +
+                    "Ensure initReport() is called from ISuiteListener.onStart() before any test runs.");
+        }
+        extentTest.set(extentReports.createTest(testName));
     }
 
-    // Returns the ExtentTest node for the current thread.
     public static ExtentTest getTest() {
         return extentTest.get();
     }
 
-    // Removes the current thread's ExtentTest node.
-    // Called from TestListener after each test method completes.
     public static void removeTest() {
         extentTest.remove();
     }
 
-    // Attaches a screenshot to the current thread's test node.
-    // screenshotPath is the absolute file path returned by ScreenshotUtils.
-    // A blank path (capture failed) is silently ignored — report integrity is preserved.
     public static void attachScreenshot(String screenshotPath) {
         if (screenshotPath == null || screenshotPath.isBlank()) {
             logger.warn("Screenshot path is blank — skipping attachment");

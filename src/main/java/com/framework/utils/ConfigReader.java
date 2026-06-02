@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Set;
 
 public final class ConfigReader {
 
@@ -13,11 +14,13 @@ public final class ConfigReader {
     private static volatile ConfigReader instance;
     private final Properties properties;
 
+    private static final Set<String> SUPPORTED_ENVIRONMENTS = Set.of("qa", "uat", "staging", "prod");
+
     private ConfigReader() {
         properties = new Properties();
         String environment = resolveEnvironment();
-        loadRequired("config/config.properties");
-        loadOptional("config/" + environment + ".properties");
+        loadRequired("config.properties");
+        loadOptional("config-" + environment + ".properties");
     }
 
     public static ConfigReader getInstance() {
@@ -44,8 +47,10 @@ public final class ConfigReader {
 
         String propValue = properties.getProperty(key);
         if (propValue == null) {
-            logger.warn("Configuration key not found: {}", key);
-            return null;
+            throw new ConfigurationException(
+                    "Required configuration key not found: '" + key + "'. " +
+                    "Set it in config.properties, config-{env}.properties, " +
+                    "or via the " + toEnvVarKey(key) + " environment variable.");
         }
         return propValue.trim();
     }
@@ -61,7 +66,7 @@ public final class ConfigReader {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            logger.error("Invalid integer value for key [{}]: '{}' — using default: {}", key, value, defaultValue);
+            logger.error("Invalid integer for key [{}]: '{}' — using default: {}", key, value, defaultValue);
             return defaultValue;
         }
     }
@@ -72,7 +77,7 @@ public final class ConfigReader {
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
-            logger.error("Invalid long value for key [{}]: '{}' — using default: {}", key, value, defaultValue);
+            logger.error("Invalid long for key [{}]: '{}' — using default: {}", key, value, defaultValue);
             return defaultValue;
         }
     }
@@ -92,6 +97,14 @@ public final class ConfigReader {
             env = "qa";
         }
         env = env.trim().toLowerCase();
+
+        if (!SUPPORTED_ENVIRONMENTS.contains(env)) {
+            throw new ConfigurationException(
+                    "Unsupported environment: '" + env + "'. " +
+                    "Supported values: " + SUPPORTED_ENVIRONMENTS + ". " +
+                    "Set via -Denvironment=<value> (Maven) or ENVIRONMENT environment variable.");
+        }
+
         logger.info("Active environment: {}", env);
         return env;
     }
@@ -100,7 +113,8 @@ public final class ConfigReader {
         try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
             if (stream == null) {
                 throw new ConfigurationException(
-                        "Required configuration file not found on classpath: " + resourcePath);
+                        "Required configuration file not found on classpath: '" + resourcePath + "'. " +
+                        "Ensure config.properties exists under src/test/resources/.");
             }
             properties.load(stream);
             logger.debug("Loaded configuration: {}", resourcePath);
@@ -113,7 +127,7 @@ public final class ConfigReader {
     private void loadOptional(String resourcePath) {
         try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
             if (stream == null) {
-                logger.warn("Optional configuration file not found, base config will be used: {}", resourcePath);
+                logger.warn("Optional overlay not found — base config applies: {}", resourcePath);
                 return;
             }
             properties.load(stream);

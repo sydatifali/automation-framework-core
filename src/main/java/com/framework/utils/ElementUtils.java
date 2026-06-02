@@ -149,6 +149,17 @@ public class ElementUtils {
         }
     }
 
+    public int count(By locator) {
+        try {
+            int size = driver.findElements(locator).size();
+            logger.debug("Count: {} element(s) for: {}", size, locator);
+            return size;
+        } catch (Exception e) {
+            logger.debug("count() returned 0 for {}: {}", locator, e.getMessage());
+            return 0;
+        }
+    }
+
     // ── Mouse interactions ────────────────────────────────────────────────────
 
     public void hover(By locator) {
