@@ -12,6 +12,8 @@ public final class ExtentReportManager {
 
     private static final String REPORT_PATH_KEY     = "report.output.path";
     private static final String DEFAULT_REPORT_PATH = "target/reports/extent-report.html";
+    private static final String REPORT_NAME_KEY     = "report.name";
+    private static final String DEFAULT_REPORT_NAME = "Test Execution Report";
 
     private static volatile ExtentReports extentReports;
     private static final ThreadLocal<ExtentTest> extentTest = new ThreadLocal<>();
@@ -34,7 +36,8 @@ public final class ExtentReportManager {
         ExtentSparkReporter spark = new ExtentSparkReporter(reportPath);
         spark.config().setTheme(Theme.DARK);
         spark.config().setDocumentTitle("Test Execution Report");
-        spark.config().setReportName("Selenium Framework Core");
+        spark.config().setReportName(
+                ConfigReader.getInstance().get(REPORT_NAME_KEY, DEFAULT_REPORT_NAME));
         spark.config().setEncoding("UTF-8");
 
         extentReports = new ExtentReports();

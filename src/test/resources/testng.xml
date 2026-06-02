@@ -9,7 +9,7 @@
     Thread count is overridden by Maven Surefire when thread.count is set
     (e.g. mvn test -Dthread.count=5).
 -->
-<suite name="Selenium Framework Core" parallel="methods" thread-count="3" verbose="1">
+<suite name="Test Suite" parallel="methods" thread-count="3" verbose="1">
 
     <test name="Framework Validation">
         <packages>
