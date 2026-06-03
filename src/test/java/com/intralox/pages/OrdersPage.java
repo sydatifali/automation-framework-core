@@ -4,6 +4,7 @@ import com.framework.pages.BasePage;
 import com.framework.utils.LoggerUtils;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -16,16 +17,17 @@ public class OrdersPage extends BasePage {
 
     // ── Search ────────────────────────────────────────────────────────────────
 
-    private static final By ORDER_SEARCH_INPUT    = By.cssSelector("TODO: order number search input");
-    private static final By SEARCH_BUTTON         = By.cssSelector("TODO: search submit button");
+    private static final By ORDER_SEARCH_INPUT = By.cssSelector("input[type='search']");
+
+    // ── Filters ───────────────────────────────────────────────────────────────
+
+    private static final By CLEAR_ALL_BUTTON = By.xpath("//*[normalize-space(text())='Clear All']");
 
     // ── Results ───────────────────────────────────────────────────────────────
 
-    // If no loading indicator exists, replace waitForInvisibility(LOADING_INDICATOR)
-    // in searchOrder() with the stale-element strategy against RESULTS_CONTAINER.
-    private static final By LOADING_INDICATOR     = By.cssSelector("TODO: loading spinner or overlay during search");
-    private static final By RESULTS_CONTAINER     = By.cssSelector("TODO: results table or container");
-    private static final By RESULT_ROWS           = By.cssSelector("TODO: individual result row selector");
+    // tr[role='row'] targets ARIA table rows. May include the header row —
+    // verify during test execution and adjust getResultCount() if needed.
+    private static final By RESULT_ROWS = By.cssSelector("tr[role='row']");
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -49,7 +51,13 @@ public class OrdersPage extends BasePage {
     }
 
     public boolean isOrderVisible(String orderNumber) {
-        return elementUtils.isDisplayed(orderRowLocator(orderNumber));
+        try {
+            waitUtils.waitForVisibility(By.linkText(orderNumber));
+            return true;
+        } catch (Exception e) {
+            logger.debug("Order link not visible within timeout: {}", orderNumber);
+            return false;
+        }
     }
 
     public int getResultCount() {
@@ -58,12 +66,21 @@ public class OrdersPage extends BasePage {
 
     // ── Search ────────────────────────────────────────────────────────────────
 
+    public OrdersPage clearFilters() {
+        logger.info("Clearing all active filters");
+        if (elementUtils.isPresent(CLEAR_ALL_BUTTON)) {
+            elementUtils.click(CLEAR_ALL_BUTTON);
+            logger.info("Active filters cleared");
+        } else {
+            logger.info("No active filters present");
+        }
+        return this;
+    }
+
     public OrdersPage searchOrder(String orderNumber) {
         logger.info("Searching for order: {}", orderNumber);
-        elementUtils.clear(ORDER_SEARCH_INPUT);
         elementUtils.enterText(ORDER_SEARCH_INPUT, orderNumber);
-        elementUtils.click(SEARCH_BUTTON);
-        waitUtils.waitForInvisibility(LOADING_INDICATOR);
+        waitUtils.waitForVisibility(ORDER_SEARCH_INPUT).sendKeys(Keys.RETURN);
         return this;
     }
 
@@ -71,17 +88,7 @@ public class OrdersPage extends BasePage {
 
     public OrderDetailsPage openOrder(String orderNumber) {
         logger.info("Opening order: {}", orderNumber);
-        elementUtils.click(orderRowLocator(orderNumber));
-        OrderDetailsPage orderDetailsPage = new OrderDetailsPage(driver);
-        return orderDetailsPage.waitForLoad();
-    }
-
-    // ── Parameterized locators ────────────────────────────────────────────────
-
-    // Constructs a row locator at call time — not stored as state.
-    // XPath targets a <tr> containing a <td> whose text includes the order number.
-    // Refine to the actual table structure during locator fill-in.
-    private static By orderRowLocator(String orderNumber) {
-        return By.xpath("//tr[.//td[contains(text(),'" + orderNumber + "')]]");
+        elementUtils.click(By.linkText(orderNumber));
+        return new OrderDetailsPage(driver).waitForLoad();
     }
 }

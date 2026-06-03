@@ -1,5 +1,6 @@
 package com.framework.driver;
 
+import com.framework.exception.ConfigurationException;
 import com.framework.exception.DriverInitialisationException;
 import com.framework.utils.ConfigReader;
 import com.framework.utils.LoggerUtils;
@@ -12,6 +13,7 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.net.MalformedURLException;
@@ -62,9 +64,11 @@ public final class DriverFactory {
         validateBrowser(browser);
         logStartupConfig(executionMode, browser, headless);
 
-        WebDriver driver = "remote".equalsIgnoreCase(executionMode)
-                ? createRemoteDriver(browser)
-                : createLocalDriver(browser);
+        WebDriver driver = switch (executionMode.toLowerCase().trim()) {
+            case "blazemeter" -> createBlazeGridDriver(browser);
+            case "remote"     -> createRemoteDriver(browser);
+            default           -> createLocalDriver(browser);
+        };
 
         configureDriver(driver);
         return driver;
@@ -93,7 +97,51 @@ public final class DriverFactory {
         };
     }
 
-    // ── Remote execution (Selenium Grid / BlazeMeter) ────────────────────────
+    // ── BlazeGrid execution (BlazeMeter) ─────────────────────────────────────
+
+    private static WebDriver createBlazeGridDriver(String browser) {
+        String hubUrl = config.get("blazemeter.hub.url",
+                "https://a.blazemeter.com/api/v4/grid/wd/hub");
+        logger.info("Connecting to BlazeGrid: {}", hubUrl);
+        try {
+            URL url = new URL(hubUrl);
+            return switch (browser) {
+                case "chrome"  -> new RemoteWebDriver(url, buildBlazeGridChromeOptions());
+                case "firefox" -> new RemoteWebDriver(url, buildFirefoxOptions());
+                case "edge"    -> new RemoteWebDriver(url, buildEdgeOptions());
+                default        -> throw new DriverInitialisationException(unsupportedBrowserMessage(browser));
+            };
+        } catch (MalformedURLException e) {
+            throw new DriverInitialisationException(
+                    "Invalid BlazeGrid hub URL: '" + hubUrl + "'", e);
+        }
+    }
+
+    private static ChromeOptions buildBlazeGridChromeOptions() {
+        String apiKey    = System.getenv("BLAZEMETER_API_KEY");
+        String apiSecret = System.getenv("BLAZEMETER_API_SECRET");
+
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new ConfigurationException(
+                    "BLAZEMETER_API_KEY is not set. " +
+                    "Set it as an environment variable before running with execution.mode=blazemeter.");
+        }
+        if (apiSecret == null || apiSecret.isBlank()) {
+            throw new ConfigurationException(
+                    "BLAZEMETER_API_SECRET is not set. " +
+                    "Set it as an environment variable before running with execution.mode=blazemeter.");
+        }
+
+        MutableCapabilities bzmCaps = new MutableCapabilities();
+        bzmCaps.setCapability("blazemeter.apiKey",    apiKey);
+        bzmCaps.setCapability("blazemeter.apiSecret", apiSecret);
+
+        ChromeOptions options = buildChromeOptions().merge(bzmCaps);
+        logger.debug("BlazeGrid ChromeOptions built via MutableCapabilities merge (credentials not logged)");
+        return options;
+    }
+
+    // ── Remote execution (Selenium Grid) ─────────────────────────────────────
 
     private static WebDriver createRemoteDriver(String browser) {
         URL gridUrl = resolveGridUrl();
@@ -226,9 +274,11 @@ public final class DriverFactory {
         logger.info("  Browser        : {}", browser);
         logger.info("  Headless       : {}", headless);
         logger.info("  Target         : {}",
-                "remote".equalsIgnoreCase(executionMode)
-                        ? config.get("grid.url", "not configured")
-                        : "local machine");
+                switch (executionMode.toLowerCase().trim()) {
+                    case "blazemeter" -> "a.blazemeter.com (BlazeGrid)";
+                    case "remote"     -> config.get("grid.url", "not configured");
+                    default           -> "local machine";
+                });
         logger.info("--------------------------------------------------");
     }
 }
