@@ -1,0 +1,2 @@
+scenarioName,emailKey,passwordKey,expectedPage
+Standard user navigates to Orders,MYINTRALOX_EMAIL,MYINTRALOX_PASSWORD,Orders

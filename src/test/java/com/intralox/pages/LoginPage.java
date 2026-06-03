@@ -5,6 +5,7 @@ import com.framework.utils.ConfigReader;
 import com.framework.utils.LoggerUtils;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 
 public class LoginPage extends BasePage {
@@ -61,8 +62,8 @@ public class LoginPage extends BasePage {
     }
 
     public LoginPage continueSignIn() {
-        logger.info("Clicking Continue Sign In");
-        elementUtils.click(CONTINUE_BUTTON);
+        logger.info("Submitting email step");
+        waitUtils.waitForVisibility(EMAIL_INPUT).sendKeys(Keys.RETURN);
         waitUtils.waitForVisibility(PASSWORD_INPUT);
         return this;
     }
@@ -80,8 +81,8 @@ public class LoginPage extends BasePage {
     }
 
     public LoginPage verifyLogin() {
-        logger.info("Clicking Verify");
-        elementUtils.click(VERIFY_BUTTON);
+        logger.info("Submitting password step");
+        waitUtils.waitForVisibility(PASSWORD_INPUT).sendKeys(Keys.RETURN);
         return this;
     }
 

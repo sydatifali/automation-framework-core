@@ -5,6 +5,10 @@ import com.framework.utils.LoggerUtils;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
 
 public class OrdersPage extends BasePage {
 
@@ -12,7 +16,7 @@ public class OrdersPage extends BasePage {
 
     // ── Page identity ─────────────────────────────────────────────────────────
 
-    private static final By ORDERS_PAGE_INDICATOR = By.cssSelector("TODO: stable element unique to orders tab");
+    private static final By ORDERS_PAGE_INDICATOR = By.xpath("//h1[contains(., 'Order Management')]");
 
     // ── Search ────────────────────────────────────────────────────────────────
 
@@ -37,14 +41,15 @@ public class OrdersPage extends BasePage {
 
     public OrdersPage waitForLoad() {
         logger.info("Waiting for Orders page to load");
-        waitUtils.waitForVisibility(ORDERS_PAGE_INDICATOR);
+        new WebDriverWait(driver, Duration.ofSeconds(15))
+                .until(ExpectedConditions.urlContains("/orders-management/orders"));
         return this;
     }
 
     // ── State queries ─────────────────────────────────────────────────────────
 
     public boolean isOrdersPageDisplayed() {
-        return elementUtils.isDisplayed(ORDERS_PAGE_INDICATOR);
+        return driver.getCurrentUrl().contains("/orders-management/orders");
     }
 
     public boolean isOrderVisible(String orderNumber) {

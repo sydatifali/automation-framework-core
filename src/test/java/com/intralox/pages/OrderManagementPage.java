@@ -12,7 +12,7 @@ public class OrderManagementPage extends BasePage {
 
     // ── Page identity ─────────────────────────────────────────────────────────
 
-    private static final By ORDER_MANAGEMENT_PAGE_INDICATOR = By.cssSelector("TODO: element unique to order management section");
+    private static final By ORDER_MANAGEMENT_PAGE_INDICATOR = By.xpath("//h1[contains(., 'Order Management')]");
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
 
