@@ -5,14 +5,14 @@ import com.framework.utils.LoggerUtils;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
 
 public class OrderManagementPage extends BasePage {
 
     private static final Logger logger = LoggerUtils.getLogger(OrderManagementPage.class);
-
-    // ── Page identity ─────────────────────────────────────────────────────────
-
-    private static final By ORDER_MANAGEMENT_PAGE_INDICATOR = By.xpath("//h1[contains(., 'Order Management')]");
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
 
@@ -28,14 +28,15 @@ public class OrderManagementPage extends BasePage {
 
     public OrderManagementPage waitForLoad() {
         logger.info("Waiting for Order Management page to load");
-        waitUtils.waitForVisibility(ORDER_MANAGEMENT_PAGE_INDICATOR);
+        new WebDriverWait(driver, Duration.ofSeconds(15))
+                .until(ExpectedConditions.urlContains("/orders-management"));
         return this;
     }
 
     // ── State queries ─────────────────────────────────────────────────────────
 
     public boolean isOrderManagementDisplayed() {
-        return elementUtils.isDisplayed(ORDER_MANAGEMENT_PAGE_INDICATOR);
+        return driver.getCurrentUrl().contains("/orders-management");
     }
 
     // ── Tab navigation ────────────────────────────────────────────────────────

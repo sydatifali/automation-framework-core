@@ -14,13 +14,11 @@ public class LoginPage extends BasePage {
 
     // ── State 1: Email step ───────────────────────────────────────────────────
 
-    private static final By EMAIL_INPUT     = By.name("identifier");
-    private static final By CONTINUE_BUTTON = By.cssSelector("input[value='Continue Sign In']");
+    private static final By EMAIL_INPUT    = By.name("identifier");
 
     // ── State 2: Password step ────────────────────────────────────────────────
 
-    private static final By PASSWORD_INPUT  = By.name("credentials.passcode");
-    private static final By VERIFY_BUTTON   = By.cssSelector("input[value='Verify']");
+    private static final By PASSWORD_INPUT = By.name("credentials.passcode");
 
     // ── Error state ───────────────────────────────────────────────────────────
 

@@ -14,10 +14,6 @@ public class OrdersPage extends BasePage {
 
     private static final Logger logger = LoggerUtils.getLogger(OrdersPage.class);
 
-    // ── Page identity ─────────────────────────────────────────────────────────
-
-    private static final By ORDERS_PAGE_INDICATOR = By.xpath("//h1[contains(., 'Order Management')]");
-
     // ── Search ────────────────────────────────────────────────────────────────
 
     private static final By ORDER_SEARCH_INPUT    = By.cssSelector("TODO: order number search input");
