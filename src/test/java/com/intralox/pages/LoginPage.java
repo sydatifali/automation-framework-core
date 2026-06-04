@@ -14,11 +14,11 @@ public class LoginPage extends BasePage {
 
     // ── State 1: Email step ───────────────────────────────────────────────────
 
-    private static final By EMAIL_INPUT    = By.name("identifier");
+    private static final By EMAIL_INPUT    = By.cssSelector("[name='identifier']");
 
     // ── State 2: Password step ────────────────────────────────────────────────
 
-    private static final By PASSWORD_INPUT = By.name("credentials.passcode");
+    private static final By PASSWORD_INPUT = By.cssSelector("[name='credentials.passcode']");
 
     // ── Error state ───────────────────────────────────────────────────────────
 
@@ -26,9 +26,8 @@ public class LoginPage extends BasePage {
 
     // ── Page identity ─────────────────────────────────────────────────────────
 
-    // Reused from EMAIL_INPUT — the email field is the most reliable indicator that the
-    // login form is rendered and interactive. Absent on all other pages.
-    private static final By PAGE_INDICATOR  = By.name("identifier");
+    // The email field is the most reliable indicator the login form is rendered.
+    private static final By PAGE_INDICATOR  = EMAIL_INPUT;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 

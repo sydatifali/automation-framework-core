@@ -22,3 +22,6 @@ Thumbs.db
 
 # ── WebDriverManager cache ────────────────────────────────────────────────────
 .wdm/
+
+# ── Local credentials (never commit) ─────────────────────────────────────────
+src/test/resources/local-secrets.properties

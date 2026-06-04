@@ -1,0 +1,12 @@
+execution:
+  - executor: maven
+    scenario: intralox-smoke
+
+scenarios:
+  intralox-smoke:
+    script: pom.xml
+    properties:
+      execution.mode: remote
+      environment: qa
+      browser: chrome
+      testng.suite.file: testng-smoke.xml

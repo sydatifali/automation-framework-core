@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="Intralox Smoke Suite" parallel="false" verbose="1">
+
+    <test name="Login Smoke">
+        <classes>
+            <class name="com.intralox.tests.LoginSmokeTest"/>
+        </classes>
+    </test>
+
+    <test name="Navigation Smoke">
+        <classes>
+            <class name="com.intralox.tests.NavigationSmokeTest"/>
+        </classes>
+    </test>
+
+    <test name="Order Search Smoke">
+        <classes>
+            <class name="com.intralox.tests.OrderSearchTest"/>
+        </classes>
+    </test>
+
+</suite>

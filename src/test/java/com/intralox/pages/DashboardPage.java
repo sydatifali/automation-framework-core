@@ -4,7 +4,9 @@ import com.framework.pages.BasePage;
 import com.framework.utils.LoggerUtils;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.testng.Assert;
 
 public class DashboardPage extends BasePage {
 
@@ -15,6 +17,8 @@ public class DashboardPage extends BasePage {
     // section.user-info is structurally stable and absent on the login page.
     // Avoids dependency on user-specific text values.
     private static final By PAGE_INDICATOR    = By.cssSelector("section.user-info");
+
+    private static final By AUTH_ERROR        = By.xpath("//*[normalize-space(text())='Error Signing In']");
 
     // ── User context ──────────────────────────────────────────────────────────
 
@@ -40,7 +44,14 @@ public class DashboardPage extends BasePage {
 
     public DashboardPage waitForLoad() {
         logger.info("Waiting for Dashboard to load");
-        waitUtils.waitForVisibility(PAGE_INDICATOR);
+        try {
+            waitUtils.waitForVisibility(PAGE_INDICATOR);
+        } catch (TimeoutException e) {
+            if (elementUtils.isPresent(AUTH_ERROR)) {
+                Assert.fail("Portal authentication failed: Error Signing In");
+            }
+            throw e;
+        }
         return this;
     }
 

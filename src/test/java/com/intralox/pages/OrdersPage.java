@@ -6,10 +6,6 @@ import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
 
 public class OrdersPage extends BasePage {
 
@@ -39,8 +35,7 @@ public class OrdersPage extends BasePage {
 
     public OrdersPage waitForLoad() {
         logger.info("Waiting for Orders page to load");
-        new WebDriverWait(driver, Duration.ofSeconds(15))
-                .until(ExpectedConditions.urlContains("/orders-management/orders"));
+        waitUtils.waitForUrlContains("/orders-management/orders");
         return this;
     }
 

@@ -35,36 +35,26 @@ public final class ConfigReader {
     }
 
     public String get(String key) {
-        String envValue = System.getenv(toEnvVarKey(key));
-        if (envValue != null && !envValue.isBlank()) {
-            return envValue.trim();
+        String value = findValue(key);
+        if (value != null) {
+            return value.trim();
         }
-
-        String sysValue = System.getProperty(key);
-        if (sysValue != null && !sysValue.isBlank()) {
-            return sysValue.trim();
-        }
-
-        String propValue = properties.getProperty(key);
-        if (propValue == null) {
-            throw new ConfigurationException(
-                    "Required configuration key not found: '" + key + "'. " +
-                    "Set it in config.properties, config-{env}.properties, " +
-                    "or via the " + toEnvVarKey(key) + " environment variable.");
-        }
-        return propValue.trim();
+        throw new ConfigurationException(
+                "Required configuration key not found: '" + key + "'. " +
+                "Set it in config.properties, config-{env}.properties, " +
+                "or via the " + toEnvVarKey(key) + " environment variable.");
     }
 
     public String get(String key, String defaultValue) {
-        String value = get(key);
-        return (value != null && !value.isBlank()) ? value : defaultValue;
+        String value = findValue(key);
+        return (value != null && !value.isBlank()) ? value.trim() : defaultValue;
     }
 
     public int getInt(String key, int defaultValue) {
-        String value = get(key);
+        String value = findValue(key);
         if (value == null || value.isBlank()) return defaultValue;
         try {
-            return Integer.parseInt(value);
+            return Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
             logger.error("Invalid integer for key [{}]: '{}' — using default: {}", key, value, defaultValue);
             return defaultValue;
@@ -72,10 +62,10 @@ public final class ConfigReader {
     }
 
     public long getLong(String key, long defaultValue) {
-        String value = get(key);
+        String value = findValue(key);
         if (value == null || value.isBlank()) return defaultValue;
         try {
-            return Long.parseLong(value);
+            return Long.parseLong(value.trim());
         } catch (NumberFormatException e) {
             logger.error("Invalid long for key [{}]: '{}' — using default: {}", key, value, defaultValue);
             return defaultValue;
@@ -83,9 +73,24 @@ public final class ConfigReader {
     }
 
     public boolean getBoolean(String key, boolean defaultValue) {
-        String value = get(key);
+        String value = findValue(key);
         if (value == null || value.isBlank()) return defaultValue;
-        return Boolean.parseBoolean(value);
+        return Boolean.parseBoolean(value.trim());
+    }
+
+    // Returns the resolved value for key, or null if the key is absent from all sources.
+    // Env vars and system properties are trimmed and must be non-blank to match.
+    // A properties-file value is returned as-is (possibly blank) — callers check isBlank().
+    private String findValue(String key) {
+        String envValue = System.getenv(toEnvVarKey(key));
+        if (envValue != null && !envValue.isBlank()) {
+            return envValue.trim();
+        }
+        String sysValue = System.getProperty(key);
+        if (sysValue != null && !sysValue.isBlank()) {
+            return sysValue.trim();
+        }
+        return properties.getProperty(key);
     }
 
     private String resolveEnvironment() {
