@@ -1,0 +1,59 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0
+          https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+    <id>fat-tests</id>
+
+    <formats>
+        <format>jar</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <!--
+        Unpacks all compile- and test-scope dependency JARs into the root of the
+        fat JAR. Signing metadata (*.SF, *.DSA, *.RSA) is stripped to prevent
+        SecurityException when the JVM validates the merged manifest.
+        META-INF/MANIFEST.MF is excluded so the assembly plugin can write a
+        clean manifest for the combined artifact.
+    -->
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <unpack>true</unpack>
+            <scope>test</scope>
+            <unpackOptions>
+                <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                </excludes>
+            </unpackOptions>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <!-- Main compiled classes: com.framework.* -->
+        <fileSet>
+            <directory>${project.build.outputDirectory}</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+
+        <!--
+            Test compiled classes (com.intralox.*) and all test resources.
+            local-secrets.properties is excluded — credentials must never be
+            embedded in a distributable artifact.
+        -->
+        <fileSet>
+            <directory>${project.build.testOutputDirectory}</directory>
+            <outputDirectory>/</outputDirectory>
+            <excludes>
+                <exclude>local-secrets.properties</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+
+</assembly>

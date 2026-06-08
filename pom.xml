@@ -196,6 +196,40 @@
                 <version>3.3.1</version>
             </plugin>
 
+            <!-- ========================================================
+                 Assembly Plugin — BlazeMeter fat test JAR
+                 Bundles main classes, test classes, all test resources
+                 (excluding local-secrets.properties), and all dependency
+                 JARs into a single artifact for Taurus execution.
+
+                 Output : target/blaze-test-package.jar
+                 Trigger: mvn clean package (-DskipTests not required;
+                          Surefire is skipped when no suite file is given)
+                 Taurus  : executor=selenium, runner=testng,
+                           script=blaze-test-package.jar
+            ======================================================== -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>fat-test-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/fat-test-jar.xml</descriptor>
+                            </descriptors>
+                            <finalName>blaze-test-package</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
 
         <!-- Explicit testResource declaration ensures only src/test/resources

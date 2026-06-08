@@ -1,12 +1,13 @@
 execution:
-  - executor: maven
+  - executor: selenium
+    runner: testng
+    testng-xml: testng-smoke.xml
+    env:
+      EXECUTION_MODE: remote
+      ENVIRONMENT: qa
+      BROWSER: chrome
     scenario: intralox-smoke
 
 scenarios:
   intralox-smoke:
-    script: pom.xml
-    properties:
-      execution.mode: remote
-      environment: qa
-      browser: chrome
-      testng.suite.file: testng-smoke.xml
+    script: blaze-test-package.jar
